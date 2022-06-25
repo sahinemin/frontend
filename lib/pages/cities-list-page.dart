@@ -19,7 +19,18 @@ class _CitiesListState extends State<CitiesList> {
     widget.accessToken=data.toString().substring(14,data.toString().length-1);
     bool hasConnection=false;
     return Scaffold(
-      appBar: AppBar(title: const Text("Cities")),
+      appBar: AppBar(title: const Text("Cities"),actions: <Widget>[
+        IconButton(
+          icon: const Icon(
+            Icons.logout,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            Navigator.of(context).pushReplacementNamed("/");
+            // do something
+          },
+        )
+      ],),
       body:  FutureBuilder<List<dynamic>?>(initialData:const [],builder: (ctx,snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           // If we got an error

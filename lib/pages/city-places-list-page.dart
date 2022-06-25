@@ -29,7 +29,18 @@ class _CityPlacesListState extends State<CityPlacesList> {
             'city':widget.city
           }
           ,),
-        )),
+        ),actions: <Widget>[
+          IconButton(
+            icon: const Icon(
+              Icons.logout,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.of(context).pushNamed("/");
+              // do something
+            },
+          )
+        ]),
         body:  FutureBuilder<List<dynamic>?>(initialData:const [],builder: (ctx,snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             // If we got an error

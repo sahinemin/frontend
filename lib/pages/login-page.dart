@@ -29,6 +29,7 @@ class _LoginState extends State<Login> {
         key: _scaffoldKey,
         backgroundColor: Colors.indigo,
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           title: const Text('TASK'),
           backgroundColor: Colors.black,
         ),

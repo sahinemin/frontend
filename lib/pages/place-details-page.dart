@@ -29,9 +29,22 @@ class _PlaceDetailsState extends State<PlaceDetails> {
           onPressed: ()=>Navigator.pushReplacementNamed(context, '/cityPlaces',arguments: <String, String>{
             'accessToken': widget.accessToken,
             'city':widget.city
-          }
-            ,),
-        )),
+          },
+            ),
+        ),
+            actions: <Widget>[
+              IconButton(
+                icon: const Icon(
+                  Icons.logout,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  Navigator.of(context).pushNamed("/");
+                  // do something
+                },
+              )
+            ]
+        ),
         body:  FutureBuilder<List<dynamic>?>(initialData:const [],builder: (ctx,snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             // If we got an error
