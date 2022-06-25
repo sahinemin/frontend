@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 class CitiesList extends StatefulWidget {
   String accessToken;
@@ -16,10 +17,10 @@ class _CitiesListState extends State<CitiesList> {
   Widget build(BuildContext context) {
     var data=ModalRoute.of(context)?.settings.arguments;
     widget.accessToken=data.toString().substring(14,data.toString().length-1);
-
+    bool hasConnection=false;
     return Scaffold(
       appBar: AppBar(title: const Text("Cities")),
-      body:  FutureBuilder<List<dynamic>>(initialData:const [],builder: (ctx,snapshot) {
+      body:  FutureBuilder<List<dynamic>?>(initialData:const [],builder: (ctx,snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           // If we got an error
           if (snapshot.hasError) {
@@ -61,7 +62,7 @@ class _CitiesListState extends State<CitiesList> {
 
 
         },
-      future: fetchData(widget.accessToken),
+      future: fetchData(widget.accessToken,hasConnection,context),
 
 
 
@@ -71,12 +72,23 @@ class _CitiesListState extends State<CitiesList> {
   }
 }
 // ignore: prefer_typing_uninitialized_variables
-Future<List<dynamic>> fetchData(String token) async {
-  final url = Uri.parse('http://192.168.1.33:5000/rest/cities');
-  final headers = {"Content-type": "application/json", "Accept": "application/json","Authorization":"Bearer $token"};
-  var response = await http.post(url, headers: headers, body: '{}');
-  var decoded = json.decode(response.body);
-  return decoded["data"];
+Future<List<dynamic>?> fetchData(String token,bool hasConnection,BuildContext context) async {
+  hasConnection = await InternetConnectionChecker().hasConnection;
+  var response;
+  if(hasConnection){
+    final url = Uri.parse('http://192.168.1.33:5000/rest/cities');
+    final headers = {"Content-type": "application/json", "Accept": "application/json","Authorization":"Bearer $token"};
+    response = await http.post(url, headers: headers, body: '{}');
+    var decoded = json.decode(response.body);
+    return decoded["data"];
+  }
+  else{
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Network is not available")));
+    return null;
+  }
+
+
+
 }
 /*
 var resp=await fetchData(widget.accessToken);

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart'as http;
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 class PlaceDetails extends StatefulWidget {
   String accessToken;
@@ -18,6 +19,7 @@ class _PlaceDetailsState extends State<PlaceDetails> {
     var data=ModalRoute.of(context)?.settings.arguments;
     widget.accessToken=data.toString().substring(14,data.toString().length-1);
     widget.city=data.toString().substring(data.toString().length-4,data.toString().length-1);
+    bool hasConnection=false;
     return Scaffold(
         extendBody: true,
         appBar: AppBar(title: const Text("PlaceDetails"),leading:  BackButton(
@@ -27,7 +29,7 @@ class _PlaceDetailsState extends State<PlaceDetails> {
           }
             ,),
         )),
-        body:  FutureBuilder<List<dynamic>>(initialData:const [],builder: (ctx,snapshot) {
+        body:  FutureBuilder<List<dynamic>?>(initialData:const [],builder: (ctx,snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             // If we got an error
             if (snapshot.hasError) {
@@ -69,40 +71,54 @@ class _PlaceDetailsState extends State<PlaceDetails> {
             child: CircularProgressIndicator(),
           );
 
-
-
-
         },
-          future: fetchData(widget.accessToken,widget.city),
-
-
-
+          future: fetchData(widget.accessToken,widget.city,hasConnection,context),
         )
         
     );
   }
 }
 List<String> list=[];
-Future<List<dynamic>> fetchData(String token,city) async {
-  final url = Uri.parse('http://192.168.1.33:5000/rest/places');
-  final headers = {"Content-type": "application/json", "Accept": "application/json","Authorization":"Bearer $token"};
-  var response = await http.post(url, headers: headers, body: '{"city":"$city"}');
-  var decoded = json.decode(response.body);
-  //print(decoded[0]["landing"]);
-  //print(decoded[0]["alternative"].toString().substring(1,decoded[0]["alternative"].toString().length-1).split(",").length);
-  list=[];
-  list.add(decoded[0]["landing"]);
-  //print(decoded[0]["alternative"].toString());
-  if(decoded[0]["alternative"].toString().length>3)
-  {
-    for(int i=0; i<decoded[0]["alternative"].toString().substring(1,decoded[0]["alternative"].toString().length-1).split(",").length; i++)
-  {
-    list.add(decoded[0]["alternative"].toString().substring(1,decoded[0]["alternative"].toString().length-1).split(",")[i].trim());
+Future<List<dynamic>?> fetchData(String token,city,bool hasConnection,BuildContext context) async {
+  hasConnection = await InternetConnectionChecker().hasConnection;
+  if(hasConnection) {
+    final url = Uri.parse('http://192.168.1.33:5000/rest/places');
+    final headers = {
+      "Content-type": "application/json",
+      "Accept": "application/json",
+      "Authorization": "Bearer $token"
+    };
+    var response = await http.post(
+        url, headers: headers, body: '{"city":"$city"}');
+    var decoded = json.decode(response.body);
+    //print(decoded[0]["landing"]);
+    //print(decoded[0]["alternative"].toString().substring(1,decoded[0]["alternative"].toString().length-1).split(",").length);
+    list = [];
+    list.add(decoded[0]["landing"]);
+    //print(decoded[0]["alternative"].toString());
+    if (decoded[0]["alternative"]
+        .toString()
+        .length > 3) {
+      for (int i = 0; i < decoded[0]["alternative"]
+          .toString()
+          .substring(1, decoded[0]["alternative"]
+          .toString()
+          .length - 1)
+          .split(",")
+          .length; i++) {
+        list.add(decoded[0]["alternative"].toString().substring(
+            1, decoded[0]["alternative"]
+            .toString()
+            .length - 1).split(",")[i].trim());
+      }
+    }
 
+    // print(list);
+
+    return decoded;
   }
+  else{
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Network is not available")));
+    return null;
   }
-
- // print(list);
-
-  return decoded;
 }

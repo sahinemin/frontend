@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -16,6 +17,7 @@ class _LoginState extends State<Login> {
   final TextEditingController _usernameController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _passwordController = TextEditingController();
+  bool hasConnection=false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,20 +126,22 @@ class _LoginState extends State<Login> {
                     ),
                   ),
                   onPressed: () async {
-                    var resp=await makePostRequest(_usernameController.text,_passwordController.text);
+                    var resp=await makePostRequest(_usernameController.text,_passwordController.text,hasConnection,context);
                     await Future.delayed(const Duration(seconds: 1));
                     if (!mounted) return;
-                  if(resp.statusCode==200) {
-                    var respData=jsonDecode(resp.body);
-                    //print(respData["access_token"]);
-                    Navigator.pushReplacementNamed(context, '/cities',arguments: <String, String>{
-                      'accessToken': respData["access_token"],
-                    },);
+                    if(resp!=null){
+                      if(resp.statusCode==200) {
+                        var respData=jsonDecode(resp.body);
+                        //print(respData["access_token"]);
+                        Navigator.pushReplacementNamed(context, '/cities',arguments: <String, String>{
+                          'accessToken': respData["access_token"],
+                        },);
 
-                  }
-                  else{
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(resp.body)));
-                     }
+                      }
+                      else{
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(resp.body)));
+                      }
+                    }
                   },
                 ),
               ),
@@ -148,12 +152,21 @@ class _LoginState extends State<Login> {
   }
 }
 
-// ignore: prefer_typing_uninitialized_variables
+Future<http.Response?> makePostRequest(String username,password, bool hasConnection, BuildContext context) async {
+  hasConnection = await InternetConnectionChecker().hasConnection;
+  var response;
+  if(hasConnection) {
+    final url = Uri.parse('http://192.168.1.33:5000/rest/login');
+    final headers = {"Content-type": "application/json"};
+    var json = '{"username": "$username" , "password": "$password"}';
+    response= await http.post(url, headers: headers, body: json);
+    return response;
+  }
 
-Future<http.Response> makePostRequest(String username,password) async {
-  final url = Uri.parse('http://192.168.1.33:5000/rest/login');
-  final headers = {"Content-type": "application/json"};
-  var json = '{"username": "$username" , "password": "$password"}';
-  var response = await http.post(url, headers: headers, body: json);
-  return response;
+  else {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Network is not available")));
+    return null;
+  }
+
+
 }
