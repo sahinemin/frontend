@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:internet_connection_checker/internet_connection_checker.dart';
-
+import 'package:search_page/search_page.dart';
 class CitiesList extends StatefulWidget {
   String accessToken;
   CitiesList({Key? key,  required this.accessToken}) : super(key: key);
@@ -11,7 +11,7 @@ class CitiesList extends StatefulWidget {
   @override
   State<CitiesList> createState() => _CitiesListState();
 }
-
+List cities=[];
 class _CitiesListState extends State<CitiesList> {
   @override
   Widget build(BuildContext context) {
@@ -33,6 +33,10 @@ class _CitiesListState extends State<CitiesList> {
 
             // if we got our data
           } else if (snapshot.hasData) {
+            cities=[];
+            for(int i=0; i<snapshot.data!.length; i++){
+              cities.add(snapshot.data![i]);
+            }
             // Extracting data from snapshot object
             return ListView.builder(
                 itemCount: snapshot.data?.length,
@@ -66,8 +70,39 @@ class _CitiesListState extends State<CitiesList> {
 
 
 
-      )
+      ),
 
+    floatingActionButton:FloatingActionButton(
+      tooltip: 'Search city',
+      onPressed: () => showSearch(
+        context: context,
+        delegate: SearchPage(
+          items: cities,
+          searchLabel: 'Search city',
+          suggestion: const Center(
+            child: Text('Filter cities'),
+          ),
+          failure: const Center(
+            child: Text('No city found :('),
+          ),
+          filter: (city) => [
+            city.toString().substring(15,city.toString().length-1)
+          ],
+          builder: (city) => GestureDetector(
+            onTap: (){
+              Navigator.pushReplacementNamed(context, '/cityPlaces',arguments: <String, String>{
+                'accessToken': widget.accessToken,
+                'city':city.toString().substring(7,10)
+              },);
+            },
+            child: ListTile(
+              title: Text(city.toString().substring(17,city.toString().length-1)),
+            ),
+          ),
+        ),
+      ),
+      child: const Icon(Icons.search),
+    ),
     );
   }
 }
