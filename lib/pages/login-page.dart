@@ -1,6 +1,8 @@
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -42,7 +44,7 @@ class _LoginState extends State<Login> {
             controller: _usernameController,
             validator: (String? val) {
                 if(val!.isEmpty){
-                  return "Please enter a mail";
+                  return "Please enter a username";
                 }
                 return null;
              },
@@ -51,7 +53,7 @@ class _LoginState extends State<Login> {
                     color: Colors.white60,
                     fontSize: 15
                 ),
-                hintText: 'Email',
+                hintText: 'Username',
                 border: InputBorder.none,
             ),
           ),
@@ -122,14 +124,19 @@ class _LoginState extends State<Login> {
                     ),
                   ),
                   onPressed: () async {
-                    var statusCode=await makePostRequest(_usernameController.text,_passwordController.text);
+                    var resp=await makePostRequest(_usernameController.text,_passwordController.text);
                     await Future.delayed(const Duration(seconds: 1));
                     if (!mounted) return;
-                  if(statusCode==200) {
-                    Navigator.pushNamed(context, '/cities');
+                  if(resp.statusCode==200) {
+                    var respData=jsonDecode(resp.body);
+                    //print(respData["access_token"]);
+                    Navigator.pushReplacementNamed(context, '/cities',arguments: <String, String>{
+                      'accessToken': respData["access_token"],
+                    },);
+
                   }
                   else{
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${response.body}')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(resp.body)));
                      }
                   },
                 ),
@@ -142,11 +149,11 @@ class _LoginState extends State<Login> {
 }
 
 // ignore: prefer_typing_uninitialized_variables
-var response;
-Future<int> makePostRequest(String username,password) async {
-  final url = Uri.parse('http://192.168.1.42:5000/rest/login');
+
+Future<http.Response> makePostRequest(String username,password) async {
+  final url = Uri.parse('http://192.168.1.33:5000/rest/login');
   final headers = {"Content-type": "application/json"};
   var json = '{"username": "$username" , "password": "$password"}';
-  response = await post(url, headers: headers, body: json);
-  return response.statusCode;
+  var response = await http.post(url, headers: headers, body: json);
+  return response;
 }
